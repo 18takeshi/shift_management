@@ -3,3 +3,4 @@ pandas
 bokeh
 numpy
 reportlab==3.6.12
+openpyxl
