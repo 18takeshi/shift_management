@@ -13,7 +13,7 @@ import makepdf as mp
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
 st.title('ベルーフ静岡店 シフト作成アプリ')
-st.caption('作成者：松澤  ver1.0 2023/1/2') 
+st.caption('ver1.0 2023/1/3') 
 
 ##シフト表アップロード
 uploaded_file = st.file_uploader("勤務シフト表をアップロードしてください", type='xlsx')
@@ -53,7 +53,8 @@ if uploaded_file is not None:
     #拘束時間、休憩時間編集スライダー
     st.sidebar.write('休憩時間編集')
     df_calc = fun.rest_edit(df_calc,date,date1)
-    st.sidebar.write('社員編集(レジに入る時間のみ編集してください)')
+    st.sidebar.write('社員編集')
+    st.sidebar.caption('※仕様上,レジに入らない労働時間も不足グラフに反映されます')
     df_calc_s = fun.rest_edit(df_calc_s,date,date1)
       
     #make_graph関数でグラフ作成
@@ -133,19 +134,18 @@ if uploaded_file is not None:
     st.header('役割決定')
     tab1, tab2, tab3 ,tab4 = st.columns(4)
     with tab1:
-        asa  = fun.define_role(df_calc,df_calc_s,'朝',date,8.5)
+        fun.define_role(df_calc,df_calc_s,'朝',date,8.5)
     with tab2:
-        uriba = fun.define_role(df_calc,df_calc_s,'売場',date1,20.5)
+        fun.define_role(df_calc,df_calc_s,'売場',date1,20.5)
     with tab3:
-        nyukin = fun.define_role(df_calc,df_calc_s,'入金',date1,20.5)
+        fun.define_role(df_calc,df_calc_s,'入金',date1,20.5)
     with tab4:
-        nyukei = fun.define_role(df_calc,df_calc_s,'集計',date1,20.5)
+        fun.define_role(df_calc,df_calc_s,'集計',date1,20.5)
+    
+    st.header('最終確認')
+    st.checkbox('すべての時間帯で後方が存在しますか？')
     
     if st.button('確定') :
-        ##グラフのエクスポート
-        export_png(p, filename="sift.png",width=723,height=1023)
-        export_png(ps, filename="shain.png",width=723,height=200)
-
         ##不足のみヒストグラム(帳票出力用)
         df_husoku = df_syukei[['index','不足']]
         df_husoku = df_husoku[df_husoku['不足']<0]
@@ -170,14 +170,18 @@ if uploaded_file is not None:
         p2.xaxis.major_label_text_font_size = '20px'
         p2.yaxis.major_label_text_font_size = '20px'
         p2.yaxis.ticker = list(range(y_husoku,1))
-        export_png(p2, filename="husoku.png",width=723,height=210)
+
+        ##グラフのエクスポート
+        shift = mp.download_png(p,1023)
+        shain = mp.download_png(ps,200)
+        husoku = mp.download_png(p2,210)
 
         ##pdf出力
-        mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new)
+        mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
         
         ##df_calc出力
         df_calc = fun.separate_17(df_calc,date,date1)
         df_calc_s = fun.separate_17(df_calc_s,date,date1)
         df_all = pd.concat([df_calc,df_calc_s])
         csv = fun.convert_df(df_all)
-        st.download_button(label="データ出力",data=csv,file_name='出勤データ'+str(d)+'.csv',mime='text/csv')       
+        st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')       

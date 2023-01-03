@@ -5,9 +5,22 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.lib.units import cm,mm
 from reportlab.lib.pagesizes import A4, portrait
+from reportlab.lib.utils import ImageReader
 
-def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new):
+from bokeh.io.export import get_screenshot_as_png
+from io import BytesIO
+import io 
+
+def download_png(p,height):
+    img = get_screenshot_as_png(p, height=height, width=723)
+    buf = BytesIO()
+    img.save(buf, format="png")
+    byte_im = buf.getvalue()
+    img = ImageReader(io.BytesIO(byte_im))
+    return img
+
 ### PDFファイルを生成する ###
+def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku):
     file_name = str(d)+'_シフト.pdf'    # ファイル名を設定
     pdf = canvas.Canvas(file_name, pagesize=portrait(A4))    # PDFを生成、サイズはA4
     pdf.saveState()    # セーブ
@@ -16,9 +29,10 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new):
     pdf.setTitle(str(d)+'シフト')
     pdf.setSubject('TEST')
 
-    pdf.drawInlineImage('sift.png', 55*mm, 85*mm, 140*mm, 197*mm)
-    pdf.drawInlineImage('shain.png', 60*mm, 45*mm, 135*mm, 40*mm)
-    pdf.drawInlineImage('husoku.png', 65*mm, 5*mm, 130*mm, 40*mm)
+    ##グラフの追加
+    pdf.drawImage(shift, 55*mm, 85*mm, 140*mm, 197*mm)
+    pdf.drawImage(shain, 60*mm, 45*mm, 135*mm, 40*mm)
+    pdf.drawImage(husoku, 65*mm, 5*mm, 130*mm, 40*mm)
 
     ### 線の描画 ###
     pdf.setLineWidth(0.8)
@@ -40,21 +54,17 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new):
     pdf.drawString(1.8*cm, 0.7*cm, '合計労働時間：'+str(total_work))
 
     #労働時間,当番の反映
-    length = 18.14/len(df_calc['労働時間'])
-    strart = 27.5-length/2
-    rev = df_calc.iloc[::-1, :] #逆にする
-    for k,r in zip(rev['労働時間'],rev['当番']):
-        pdf.drawString(19.7*cm, float(strart)*cm, str(k))
-        pdf.drawString(3.6*cm, float(strart)*cm, r)
-        strart = strart - length
-    
-    length = 2.42/len(df_calc_s['労働時間'])
-    rev = df_calc_s.iloc[::-1, :] #逆にする
-    strart = 7.8-length/2
-    for k,r in zip(rev['労働時間'],rev['当番']):
-        pdf.drawString(19.7*cm, float(strart)*cm, str(k))
-        pdf.drawString(3.6*cm, float(strart)*cm, r)
-        strart = strart - length 
+    def write_role(le,sta,df_calc):
+        length = le/len(df_calc['労働時間'])
+        strart = sta-length/2
+        rev = df_calc.iloc[::-1, :] #逆にする
+        for k,r in zip(rev['労働時間'],rev['当番']):
+            pdf.drawString(19.7*cm, float(strart)*cm, str(k))
+            pdf.drawString(3.6*cm, float(strart)*cm, r)
+            strart = strart - length
+
+    write_role(18.14,27.5,df_calc)  #スタッフ分
+    write_role(2.42,7.8,df_calc_s)  #社員分
 
     ### 文字を描画 ###
     pdf.setFont('HeiseiKakuGo-W5', 20)    # フォントサイズの変更
@@ -86,4 +96,3 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new):
         PDFbyte = pdf_file.read()
 
     st.download_button(label="帳票出力",data=PDFbyte,file_name=file_name,mime="application/octet-stream")
-    #社員番号入れれる
