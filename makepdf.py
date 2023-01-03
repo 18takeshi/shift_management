@@ -10,9 +10,12 @@ from reportlab.lib.utils import ImageReader
 from bokeh.io.export import get_screenshot_as_png
 from io import BytesIO
 import io 
+from selenium import webdriver
 
-def download_png(p,height):
-    img = get_screenshot_as_png(p, height=height, width=723)
+def download_png(p,height,width):
+    driver_path = './chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=driver_path)
+    img = get_screenshot_as_png(p, height=height, width=width,driver=driver)
     buf = BytesIO()
     img.save(buf, format="png")
     byte_im = buf.getvalue()
