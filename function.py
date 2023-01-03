@@ -114,7 +114,7 @@ def make_graph(df_calc,date,date1,height):
     p.hbar(y=df_calc['index'], left=df_calc['休憩開始2'], right=df_calc['休憩終了2'], height=0.1,line_width=10,color='white')  #休憩時間グラフ
 
     p.ygrid.grid_line_color = None
-    #p.xaxis.axis_label = "勤務時間"
+    p.xaxis.axis_label = "勤務時間"
     p.xaxis.major_label_text_font_size = '20px'
     p.yaxis.major_label_text_font_size = '20px'
     p.outline_line_color = None

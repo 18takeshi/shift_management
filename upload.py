@@ -58,7 +58,7 @@ if uploaded_file is not None:
     df_calc_s = fun.rest_edit(df_calc_s,date,date1)
       
     #make_graph関数でグラフ作成
-    p = fun.make_graph(df_calc,date,date1,700)
+    p = fun.make_graph(df_calc,date,date1,1023)
     ps = fun.make_graph(df_calc_s,date,date1,200)
 
     #シフトグラフのタブ化
@@ -172,10 +172,10 @@ if uploaded_file is not None:
         p2.yaxis.ticker = list(range(y_husoku,1))
 
         ##グラフのエクスポート
-        shift = mp.download_png(p,700,495)
-        shain = mp.download_png(ps,200,723)
-        husoku = mp.download_png(p2,210,723)
-        st.write(shift)
+        shift = mp.download_png(p,'シフトグラフ',str(d)+'-シフトグラフ.png',1023,723)
+        shain = mp.download_png(ps,'社員シフトグラフ',str(d)+'-社員シフトグラフ.png',200,723)
+        husoku = mp.download_png(p2,'不足グラフ',str(d)+'-不足グラフ.png',210,723)
+        
         ##pdf出力
         mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
         
