@@ -5,3 +5,4 @@ numpy
 reportlab==3.6.12
 openpyxl
 selenium
+PIL
