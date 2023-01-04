@@ -110,7 +110,7 @@ if uploaded_file is not None:
     df_syukei['index'] = df_syukei.index
 
     #不足ヒストグラム作成
-    p1 = figure(height=350, width=362 ,x_range=(8,21), title="不足確認グラフ",toolbar_location=None, tools="")
+    p1 = figure(height=350, width=362 ,x_range=(8,21), title="不足確認グラフ", tools="")
     p1.vbar(x=df_syukei['index'], top=df_syukei['不足'], width=0.3)
     #罫線のスタイル
     p1.xaxis.bounds = (8,22)
@@ -145,38 +145,43 @@ if uploaded_file is not None:
     st.header('最終確認')
     st.checkbox('すべての時間帯で後方が存在しますか？')
     
-    if st.button('確定') :
-        ##不足のみヒストグラム(帳票出力用)
-        df_husoku = df_syukei[['index','不足']]
-        df_husoku = df_husoku[df_husoku['不足']<0]
-        #図のy軸を５に固定、万が一６以上の時
-        max_husoku = df_husoku['不足'].min()
-        if max_husoku<-3:
-            y_husoku = max_husoku
-        else:
-            y_husoku = -3
-        #グラフ作成
-        p2 = figure(height=210, width=723 ,x_range=(8,21), y_range=(y_husoku,0),title="不足確認グラフ",toolbar_location=None, tools="")
-        p2.vbar(x=df_husoku['index'], top=df_husoku['不足'], width=0.5)
-        #罫線のスタイル
-        p2.xaxis.bounds = (8,22)
-        p2.xaxis.ticker.max_interval=1
-        p2.xaxis.ticker.num_minor_ticks = 2
-        p2.xgrid.minor_grid_line_color = 'black'
-        p2.xgrid.minor_grid_line_dash = [6,4]
-        p2.xgrid.minor_grid_line_alpha = 0.1
-        p2.xaxis.axis_label = "勤務時間"
-        p2.yaxis.axis_label = "不足人数"
-        p2.xaxis.major_label_text_font_size = '20px'
-        p2.yaxis.major_label_text_font_size = '20px'
-        p2.yaxis.ticker = list(range(y_husoku,1))
+    
+    ##不足のみヒストグラム(帳票出力用)
+    df_husoku = df_syukei[['index','不足']]
+    df_husoku = df_husoku[df_husoku['不足']<0]
+    #図のy軸を５に固定、万が一６以上の時
+    max_husoku = df_husoku['不足'].min()
+    if max_husoku<-3:
+        y_husoku = max_husoku
+    else:
+        y_husoku = -3
+    #グラフ作成
+    p2 = figure(height=210, width=723 ,x_range=(8,21), y_range=(y_husoku,0),title="不足確認グラフ",toolbar_location=None, tools="")
+    p2.vbar(x=df_husoku['index'], top=df_husoku['不足'], width=0.5)
+    #罫線のスタイル
+    p2.xaxis.bounds = (8,22)
+    p2.xaxis.ticker.max_interval=1
+    p2.xaxis.ticker.num_minor_ticks = 2
+    p2.xgrid.minor_grid_line_color = 'black'
+    p2.xgrid.minor_grid_line_dash = [6,4]
+    p2.xgrid.minor_grid_line_alpha = 0.1
+    p2.xaxis.axis_label = "勤務時間"
+    p2.yaxis.axis_label = "不足人数"
+    p2.xaxis.major_label_text_font_size = '20px'
+    p2.yaxis.major_label_text_font_size = '20px'
+    p2.yaxis.ticker = list(range(y_husoku,1))
 
-        ##グラフのエクスポート
-        shift = mp.download_png(p,'シフトグラフ',str(d)+'-シフトグラフ.png',1023,723)
-        shain = mp.download_png(ps,'社員シフトグラフ',str(d)+'-社員シフトグラフ.png',200,723)
-        husoku = mp.download_png(p2,'不足グラフ',str(d)+'-不足グラフ.png',210,723)
-        
-        ##pdf出力
+    ##グラフのエクスポート
+    #shift = mp.download_png(p,'シフトグラフ',str(d)+'-シフトグラフ.png',1023,723)
+    #shain = mp.download_png(ps,'社員シフトグラフ',str(d)+'-社員シフトグラフ.png',200,723)
+    #husoku = mp.download_png(p2,'不足グラフ',str(d)+'-不足グラフ.png',210,723)
+    
+    shift = fun.png_upload('シフトグラフをアップロードしてください')
+    shain = fun.png_upload('社員シフトグラフをアップロードしてください')
+    husoku = fun.png_upload('不足グラフをアップロードしてください')
+    ##pdf出力
+    
+    if st.button('OK'):
         mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
         
         ##df_calc出力

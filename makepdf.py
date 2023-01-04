@@ -8,13 +8,15 @@ from reportlab.lib.pagesizes import A4, portrait
 from reportlab.lib.utils import ImageReader
 
 from bokeh.io.export import get_screenshot_as_png
+import bokeh.io
 from io import BytesIO
 import io 
 
 def download_png(p,label_name,file_name,height,width):
     #driver_path = './chromedriver.exe'
     #driver = webdriver.Chrome(executable_path=driver_path)
-    img = get_screenshot_as_png(p, height=height, width=width)
+    img = bokeh.io.save(p)
+    #img = get_screenshot_as_png(p, height=height, width=width)
     buf = BytesIO()
     img.save(buf, format="png")
     byte_im = buf.getvalue()
@@ -32,9 +34,9 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,h
     pdf.setSubject('TEST')
 
     ##グラフの追加
-    pdf.drawImage(shift, 55*mm, 85*mm, 140*mm, 197*mm)
-    pdf.drawImage(shain, 60*mm, 45*mm, 135*mm, 40*mm)
-    pdf.drawImage(husoku, 65*mm, 5*mm, 130*mm, 40*mm)
+    pdf.drawInlineImage(shift, 55*mm, 85*mm, 140*mm, 197*mm)
+    pdf.drawInlineImage(shain, 60*mm, 45*mm, 135*mm, 40*mm)
+    pdf.drawInlineImage(husoku, 65*mm, 5*mm, 130*mm, 40*mm)
 
     ### 線の描画 ###
     pdf.setLineWidth(0.8)
