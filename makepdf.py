@@ -5,23 +5,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.lib.units import cm,mm
 from reportlab.lib.pagesizes import A4, portrait
-from reportlab.lib.utils import ImageReader
-
-from bokeh.io.export import get_screenshot_as_png
-import bokeh.io
-from io import BytesIO
-import io 
-
-def download_png(p,label_name,file_name,height,width):
-    #driver_path = './chromedriver.exe'
-    #driver = webdriver.Chrome(executable_path=driver_path)
-    img = bokeh.io.save(p)
-    #img = get_screenshot_as_png(p, height=height, width=width)
-    buf = BytesIO()
-    img.save(buf, format="png")
-    byte_im = buf.getvalue()
-    #img = ImageReader(io.BytesIO(byte_im))
-    st.download_button(label=label_name,data=byte_im,file_name=file_name,mime="image/png")
 
 ### PDFファイルを生成する ###
 def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku):

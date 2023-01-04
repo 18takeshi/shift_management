@@ -5,7 +5,6 @@ import pandas as pd
 import numpy as np
 #bokehグラフ
 from bokeh.plotting import figure
-from bokeh.io import export_png
 #関数ファイル
 import function as fun
 import makepdf as mp
@@ -13,7 +12,7 @@ import makepdf as mp
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
 st.title('ベルーフ静岡店 シフト作成アプリ')
-st.caption('ver1.0 2023/1/3') 
+st.caption('ver1.0 2023/1/4') 
 
 ##シフト表アップロード
 uploaded_file = st.file_uploader("勤務シフト表をアップロードしてください", type='xlsx')
@@ -61,8 +60,8 @@ if uploaded_file is not None:
     p = fun.make_graph(df_calc,date,date1,1023)
     ps = fun.make_graph(df_calc_s,date,date1,200)
 
-    #シフトグラフのタブ化
-    taba,tabb,tabc = st.tabs(['シフトグラフ','不足確認グラフ','出勤データ'])
+    #タブ化
+    taba,tabb,tabc,tabd,tabe = st.tabs(['シフトグラフ','不足確認グラフ','出勤データ','役割選択','帳票出力'])
 
     with taba:
         st.bokeh_chart(p, use_container_width=True)
@@ -104,49 +103,16 @@ if uploaded_file is not None:
                 df_syukei.at[t,'集計'] = df_syukei.at[t,'集計']-1
 
     week = d.strftime('%a')
-
     df_syukei['基本シフト'] = df_kihon[week]
     df_syukei['不足'] = df_syukei['集計'] - df_syukei['基本シフト']
     df_syukei['index'] = df_syukei.index
 
-    #不足ヒストグラム作成
-    p1 = figure(height=350, width=362 ,x_range=(8,21), title="不足確認グラフ", tools="")
+    ##不足ヒストグラム作成p1
+    p1 = figure(height=350, width=362 ,x_range=(8,21), title="不足確認グラフ", toolbar_location=None)
     p1.vbar(x=df_syukei['index'], top=df_syukei['不足'], width=0.3)
-    #罫線のスタイル
-    p1.xaxis.bounds = (8,22)
-    p1.xaxis.ticker.max_interval=1
-    p1.yaxis.ticker.max_interval=1
-    p1.xaxis.ticker.num_minor_ticks = 2
-    p1.yaxis.ticker.num_minor_ticks = 0
-    p1.xgrid.minor_grid_line_color = 'black'
-    p1.xgrid.minor_grid_line_dash = [6,4]
-    p1.xgrid.minor_grid_line_alpha = 0.1
-    p1.xaxis.axis_label = "勤務時間"
-    p1.yaxis.axis_label = "不足人数"
-    p1.xaxis.major_label_text_font_size = '20px'
-    p1.yaxis.major_label_text_font_size = '20px'
+    p1 = fun.husoku_edit(p1)
 
-    with tabb:
-        st.bokeh_chart(p1, use_container_width=True)
-    with tabc:
-        st.dataframe(df_calc)
-
-    st.header('役割決定')
-    tab1, tab2, tab3 ,tab4 = st.columns(4)
-    with tab1:
-        fun.define_role(df_calc,df_calc_s,'朝',date,8.5)
-    with tab2:
-        fun.define_role(df_calc,df_calc_s,'売場',date1,20.5)
-    with tab3:
-        fun.define_role(df_calc,df_calc_s,'入金',date1,20.5)
-    with tab4:
-        fun.define_role(df_calc,df_calc_s,'集計',date1,20.5)
-    
-    st.header('最終確認')
-    st.checkbox('すべての時間帯で後方が存在しますか？')
-    
-    
-    ##不足のみヒストグラム(帳票出力用)
+    ##不足のみヒストグラム(帳票出力用)p2
     df_husoku = df_syukei[['index','不足']]
     df_husoku = df_husoku[df_husoku['不足']<0]
     #図のy軸を５に固定、万が一６以上の時
@@ -156,37 +122,46 @@ if uploaded_file is not None:
     else:
         y_husoku = -3
     #グラフ作成
-    p2 = figure(height=210, width=723 ,x_range=(8,21), y_range=(y_husoku,0),title="不足確認グラフ",toolbar_location=None, tools="")
+    p2 = figure(height=210, width=723 ,x_range=(8,21), y_range=(y_husoku,0),title="不足確認グラフ", tools="save")
     p2.vbar(x=df_husoku['index'], top=df_husoku['不足'], width=0.5)
-    #罫線のスタイル
-    p2.xaxis.bounds = (8,22)
-    p2.xaxis.ticker.max_interval=1
-    p2.xaxis.ticker.num_minor_ticks = 2
-    p2.xgrid.minor_grid_line_color = 'black'
-    p2.xgrid.minor_grid_line_dash = [6,4]
-    p2.xgrid.minor_grid_line_alpha = 0.1
-    p2.xaxis.axis_label = "勤務時間"
-    p2.yaxis.axis_label = "不足人数"
-    p2.xaxis.major_label_text_font_size = '20px'
-    p2.yaxis.major_label_text_font_size = '20px'
+    p2 = fun.husoku_edit(p2)
     p2.yaxis.ticker = list(range(y_husoku,1))
 
-    ##グラフのエクスポート
-    #shift = mp.download_png(p,'シフトグラフ',str(d)+'-シフトグラフ.png',1023,723)
-    #shain = mp.download_png(ps,'社員シフトグラフ',str(d)+'-社員シフトグラフ.png',200,723)
-    #husoku = mp.download_png(p2,'不足グラフ',str(d)+'-不足グラフ.png',210,723)
+    with tabb:
+        st.bokeh_chart(p1, use_container_width=True)
+        st.caption('この下↓のグラフを保存してください')
+        st.bokeh_chart(p2, use_container_width=True)
+
+    with tabc:
+        st.caption('仕様上、数字の列は1桁のものは拘束開始時間、～.1のものは拘束終了時間を示します')
+        st.dataframe(df_calc)
+
+    with tabd:
+        column1, column2, column3 ,column4 = st.columns(4)
+        with column1:
+            fun.define_role(df_calc,df_calc_s,'朝',date,8.5)
+        with column2:
+            fun.define_role(df_calc,df_calc_s,'売場',date1,20.5)
+        with column3:
+            fun.define_role(df_calc,df_calc_s,'入金',date1,20.5)
+        with column4:
+            fun.define_role(df_calc,df_calc_s,'集計',date1,20.5)
     
-    shift = fun.png_upload('シフトグラフをアップロードしてください')
-    shain = fun.png_upload('社員シフトグラフをアップロードしてください')
-    husoku = fun.png_upload('不足グラフをアップロードしてください')
-    ##pdf出力
-    
-    if st.button('OK'):
-        mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
+    with tabe:
+        st.header('最終確認')
+        st.checkbox('すべての時間帯で後方が存在しますか？')
+        st.checkbox('連続労働時間が5時間を超えるスタッフはいませんか？')
+        shift = fun.png_upload('シフトグラフをアップロードしてください')
+        shain = fun.png_upload('社員シフトグラフをアップロードしてください')
+        husoku = fun.png_upload('不足グラフをアップロードしてください')
         
-        ##df_calc出力
-        df_calc = fun.separate_17(df_calc,date,date1)
-        df_calc_s = fun.separate_17(df_calc_s,date,date1)
-        df_all = pd.concat([df_calc,df_calc_s])
-        csv = fun.convert_df(df_all)
-        st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')       
+        st.caption('※すべてのファイルをアップロードしてからOKを押してください')
+        if st.button('OK'):
+            mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
+            
+            ##df_calc出力
+            df_calc = fun.separate_17(df_calc,date,date1)
+            df_calc_s = fun.separate_17(df_calc_s,date,date1)
+            df_all = pd.concat([df_calc,df_calc_s])
+            csv = fun.convert_df(df_all)
+            st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')       
