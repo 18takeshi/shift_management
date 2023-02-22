@@ -11,7 +11,7 @@ import makepdf as mp
 #基本シフト表
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
-st.title('ベルーフ静岡店 シフト作成アプリ')
+st.title('シフト作成アプリ')
 st.caption('ver1.1 2023/2/22') 
 
 ##シフト表アップロード
