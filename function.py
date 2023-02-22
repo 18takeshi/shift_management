@@ -7,7 +7,7 @@ from bokeh.plotting import figure
 ##df_calc編集関数
 def df_calc_edit(df_calc,date,date1):      
     try:
-        df_calc = df_calc[['社員番号','入金','集計','朝','売場','新人',date,date1]]
+        df_calc = df_calc[['契約社員','時給','交通費','入金','集計','朝','売場','新人',date,date1]]
     except KeyError:
         st.write('指定した日付が範囲外です')
     #欠損値(出勤しない人)を消す
@@ -19,7 +19,7 @@ def df_calc_edit(df_calc,date,date1):
     s =s.astype('float64')
     s1 =s1.astype('float64')
     df_calcs=pd.concat([s,s1],axis=1)
-    df_calc = pd.concat([df_calcs,df_calc[['社員番号','入金','集計','朝','売場','新人']]],axis=1)
+    df_calc = pd.concat([df_calcs,df_calc[['契約社員','時給','交通費','入金','集計','朝','売場','新人']]],axis=1)
 
     #index列作成
     df_calc['index'] = df_calc.index
@@ -107,13 +107,12 @@ def separate_17(df_calc,date,date1):
 
 ##出勤時間グラフ作成関数
 def make_graph(df_calc,date,date1,height):
-    p = figure(y_range=df_calc['index'], x_range=(8,21), width=495, height=height,title="シフト",tools='save')
-    p.hbar(y=df_calc['index'], left=df_calc[date], right=df_calc[date1], height=0.1,line_width=10)  #拘束時間グラフ
-    p.hbar(y=df_calc['index'], left=df_calc['休憩開始1'], right=df_calc['休憩終了1'], height=0.1,line_width=10,color='white')  #休憩時間グラフ
-    p.hbar(y=df_calc['index'], left=df_calc['休憩開始2'], right=df_calc['休憩終了2'], height=0.1,line_width=10,color='white')  #休憩時間グラフ
+    p = figure(y_range=df_calc['index'], x_range=(8,21), width=495, height=height,tools='save')
+    p.hbar(y=df_calc['index'], left=df_calc[date], right=df_calc[date1], height=0.1,line_width=0.5,color='gray')  #拘束時間グラフ
+    p.hbar(y=df_calc['index'], left=df_calc['休憩開始1'], right=df_calc['休憩終了1'], height=0.1,line_width=0.5,color='white')  #休憩時間グラフ1
+    p.hbar(y=df_calc['index'], left=df_calc['休憩開始2'], right=df_calc['休憩終了2'], height=0.1,line_width=0.5,color='white')  #休憩時間グラフ2
 
     p.ygrid.grid_line_color = None
-    p.xaxis.axis_label = "勤務時間"
     p.xaxis.major_label_text_font_size = '20px'
     p.yaxis.major_label_text_font_size = '20px'
     p.outline_line_color = None

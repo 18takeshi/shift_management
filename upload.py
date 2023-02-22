@@ -12,12 +12,13 @@ import makepdf as mp
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
 st.title('ベルーフ静岡店 シフト作成アプリ')
-st.caption('ver1.0 2023/1/4') 
+st.caption('ver1.1 2023/2/22') 
 
 ##シフト表アップロード
 uploaded_file = st.file_uploader("勤務シフト表をアップロードしてください", type='xlsx')
 if uploaded_file is not None:
-    df = pd.read_excel(uploaded_file,index_col=1)
+    df = pd.read_excel(uploaded_file,index_col=0)
+    
     df = df.drop('出退勤')
 
     #日付
@@ -29,8 +30,8 @@ if uploaded_file is not None:
     date1 = float(date)+0.1
     
     #当日出勤df編集
-    df_calc = df[df['社員']!=1]     #社員以外
-    df_calc_s = df[df['社員']==1]   #社員
+    df_calc = df.query('社員!=1 and 契約社員!=1') #社員以外
+    df_calc_s = df.query('社員==1 | 契約社員==1')   #社員,契約社員
 
     #df_calc_edit関数で編集
     df_calc = fun.df_calc_edit(df_calc,date,date1)
@@ -57,11 +58,11 @@ if uploaded_file is not None:
     df_calc_s = fun.rest_edit(df_calc_s,date,date1)
       
     #make_graph関数でグラフ作成
-    p = fun.make_graph(df_calc,date,date1,1023)
+    p = fun.make_graph(df_calc,date,date1,1100)
     ps = fun.make_graph(df_calc_s,date,date1,200)
 
     #タブ化
-    taba,tabb,tabc,tabd,tabe = st.tabs(['シフトグラフ','不足確認グラフ','出勤データ','役割選択','帳票出力'])
+    taba,tabb,tabc,tabd = st.tabs(['シフトグラフ','不足確認グラフ','役割選択','帳票出力'])
 
     with taba:
         st.bokeh_chart(p, use_container_width=True)
@@ -74,16 +75,23 @@ if uploaded_file is not None:
 
     df_nonew = df_calc[df_calc['新人'] != 1] 
     df_new = df_calc[df_calc['新人'] == 1]
-    df_beteran = pd.concat([df_nonew,df_calc_s],axis=0) #ベテランは不足グラフに反映する
+    df_beteran = pd.concat([df_nonew,df_calc_s],axis=0) #ベテラン(新人でない人全部)は不足グラフに反映する
 
     sum_staff = df_nonew['労働時間'].sum()
     sum_new = df_new['労働時間'].sum()
-    sum_s = df_calc_s['労働時間'].sum()
-    total_work = sum_staff + sum_new + sum_s
+
+    #社員と契約社員分ける
+    df_s = df_calc_s.query('契約社員!=1')
+    df_con = df_calc_s.query('契約社員==1')
+    sum_s = df_s['労働時間'].sum()
+    sum_con = df_con['労働時間'].sum()
+
+    total_work = sum_staff + sum_new + sum_s + sum_con
 
     st.header('労働時間集計')
     st.write('スタッフ労働時間合計：'+str(sum_staff))
     st.write('社員労働時間合計：'+str(sum_s))
+    st.write('契約社員労働時間合計：'+str(sum_con))
     st.write('新人労働時間合計：'+str(sum_new))
     st.write('合計労働時間：'+str(total_work))
 
@@ -112,31 +120,11 @@ if uploaded_file is not None:
     p1.vbar(x=df_syukei['index'], top=df_syukei['不足'], width=0.3)
     p1 = fun.husoku_edit(p1)
 
-    ##不足のみヒストグラム(帳票出力用)p2
-    df_husoku = df_syukei[['index','不足']]
-    df_husoku = df_husoku[df_husoku['不足']<0]
-    #図のy軸を５に固定、万が一６以上の時
-    max_husoku = df_husoku['不足'].min()
-    if max_husoku<-3:
-        y_husoku = max_husoku
-    else:
-        y_husoku = -3
-    #グラフ作成
-    p2 = figure(height=210, width=723 ,x_range=(8,21), y_range=(y_husoku,0),title="不足確認グラフ", tools="save")
-    p2.vbar(x=df_husoku['index'], top=df_husoku['不足'], width=0.5)
-    p2 = fun.husoku_edit(p2)
-    p2.yaxis.ticker = list(range(y_husoku,1))
-
     with tabb:
+        st.caption('仕様上、新人は不足グラフには反映されません')
         st.bokeh_chart(p1, use_container_width=True)
-        st.caption('この下↓のグラフを保存してください')
-        st.bokeh_chart(p2, use_container_width=True)
 
     with tabc:
-        st.caption('仕様上、数字の列は1桁のものは拘束開始時間、～.1のものは拘束終了時間を示します')
-        st.dataframe(df_calc)
-
-    with tabd:
         column1, column2, column3 ,column4 = st.columns(4)
         with column1:
             fun.define_role(df_calc,df_calc_s,'朝',date,8.5)
@@ -147,21 +135,29 @@ if uploaded_file is not None:
         with column4:
             fun.define_role(df_calc,df_calc_s,'集計',date1,20.5)
     
-    with tabe:
+    with tabd:
         st.header('最終確認')
         st.checkbox('すべての時間帯で後方が存在しますか？')
         st.checkbox('連続労働時間が5時間を超えるスタッフはいませんか？')
         shift = fun.png_upload('シフトグラフをアップロードしてください')
         shain = fun.png_upload('社員シフトグラフをアップロードしてください')
-        husoku = fun.png_upload('不足グラフをアップロードしてください')
         
         st.caption('※すべてのファイルをアップロードしてからOKを押してください')
         if st.button('OK'):
-            mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku)
+            mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain)
             
             ##df_calc出力
             df_calc = fun.separate_17(df_calc,date,date1)
             df_calc_s = fun.separate_17(df_calc_s,date,date1)
-            df_all = pd.concat([df_calc,df_calc_s])
+
+            #社員以外給料計算
+            df_money = df_calc[['時給','交通費','~17時','17時~','労働時間']]
+            df_money['日給'] = df_money['時給']*df_money['~17時']+(df_money['時給']+50)*df_money['17時~']+df_money['交通費']
+
+            #社員、給料計算せずにdf編集
+            df_calc_s = df_calc_s[['時給','交通費','~17時','17時~','労働時間']]
+            df_calc_s['日給'] = np.nan
+            df_all = pd.concat([df_money,df_calc_s])
+            
             csv = fun.convert_df(df_all)
             st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')       
