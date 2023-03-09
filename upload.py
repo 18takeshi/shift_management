@@ -12,7 +12,7 @@ import makepdf as mp
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
 st.title('シフト作成アプリ')
-st.caption('ver1.1 2023/2/22') 
+st.caption('ver1.02 2023/3/09') 
 
 ##シフト表アップロード
 uploaded_file = st.file_uploader("勤務シフト表をアップロードしてください", type='xlsx')
@@ -91,7 +91,7 @@ if uploaded_file is not None:
     st.header('労働時間集計')
     st.write('スタッフ労働時間合計：'+str(sum_staff))
     st.write('社員労働時間合計：'+str(sum_s))
-    st.write('契約社員労働時間合計：'+str(sum_con))
+    #st.write('契約社員労働時間合計：'+str(sum_con))
     st.write('新人労働時間合計：'+str(sum_new))
     st.write('合計労働時間：'+str(total_work))
 
@@ -144,20 +144,6 @@ if uploaded_file is not None:
         
         st.caption('※すべてのファイルをアップロードしてからOKを押してください')
         if st.button('OK'):
-            mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain)
+            mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain,date,date1)
             
-            ##df_calc出力
-            df_calc = fun.separate_17(df_calc,date,date1)
-            df_calc_s = fun.separate_17(df_calc_s,date,date1)
-
-            #社員以外給料計算
-            df_money = df_calc[['時給','交通費','~17時','17時~','労働時間']]
-            df_money['日給'] = df_money['時給']*df_money['~17時']+(df_money['時給']+50)*df_money['17時~']+df_money['交通費']
-
-            #社員、給料計算せずにdf編集
-            df_calc_s = df_calc_s[['時給','交通費','~17時','17時~','労働時間']]
-            df_calc_s['日給'] = np.nan
-            df_all = pd.concat([df_money,df_calc_s])
-            
-            csv = fun.convert_df(df_all)
-            st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')       
+               

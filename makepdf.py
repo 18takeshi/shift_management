@@ -1,14 +1,15 @@
 import streamlit as st
 
+import function as fun
+
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.lib.units import cm,mm
 from reportlab.lib.pagesizes import A4, portrait
-import os
 
 ### PDFファイルを生成する ###
-def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain):
+def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain,date,date1):
     file_name = str(d)+'_シフト.pdf'    # ファイル名を設定
     pdf = canvas.Canvas(file_name, pagesize=portrait(A4))    # PDFを生成、サイズはA4
     pdf.saveState()    # セーブ
@@ -20,7 +21,8 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
     ##グラフの追加
     pdf.drawInlineImage(shift, 55*mm, 55*mm, 140*mm, 220*mm)
     pdf.drawInlineImage(shift, 55*mm, 275*mm, 140*mm, 220*mm)
-    pdf.drawInlineImage(shain, 55*mm, 15*mm, 140*mm, 40*mm)
+    if shain is not None:
+        pdf.drawInlineImage(shain, 55*mm, 15*mm, 140*mm, 40*mm)
     ### 四角形を描画して２枚目の社員グラフを隠す###
     pdf.setFillColorRGB(255,255,255)
     pdf.rect(55*mm, 279*mm, 195*mm, 297*mm, stroke=0, fill=1)
@@ -43,8 +45,8 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
     pdf.drawString(5*cm, 0.5*cm, '一般：'+str(sum_staff))
     pdf.drawString(8*cm, 0.5*cm, '新人：'+str(sum_new))
     pdf.drawString(10.5*cm, 0.5*cm, '社員：'+str(sum_s))
-    pdf.drawString(13*cm, 0.5*cm, '契約：'+str(sum_con))
-    pdf.drawString(15.5*cm, 0.5*cm, '総計：'+str(total_work))
+    #pdf.drawString(13*cm, 0.5*cm, '契約：'+str(sum_con))
+    pdf.drawString(13*cm, 0.5*cm, '総計：'+str(total_work))
 
     #労働時間,当番の反映
     def write_role(le,sta,df_calc):
@@ -57,7 +59,8 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
             strart = strart - length
 
     write_role(21.4,27.25,df_calc)  #スタッフ分
-    write_role(3.4,5.3,df_calc_s)  #社員分
+    if shain is not None:
+        write_role(3.4,5.3,df_calc_s)  #社員分
 
     ### 文字を描画 ###
     pdf.setFont('HeiseiKakuGo-W5', 20)    # フォントサイズの変更
@@ -89,3 +92,24 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
         PDFbyte = pdf_file.read()
 
     st.download_button(label="帳票出力",data=PDFbyte,file_name=file_name,mime="application/octet-stream")
+
+    ##df_calc出力
+    df_calc = fun.separate_17(df_calc,date,date1)
+    if shain is not None:
+        df_calc_s = fun.separate_17(df_calc_s,date,date1)
+
+    #社員以外給料計算
+    df_money = df_calc[['時給','交通費','~17時','17時~','労働時間']]
+    df_money['日給'] = df_money['時給']*df_money['~17時']+(df_money['時給']+50)*df_money['17時~']+df_money['交通費']
+
+    #社員、給料計算せずにdf編集
+    if shain is not None:
+        df_calc_s = df_calc_s[['時給','交通費','~17時','17時~','労働時間']]
+        df_calc_s['日給'] = np.nan
+        df_all = pd.concat([df_money,df_calc_s])
+    
+        csv = fun.convert_df(df_all)
+    else:
+        csv = fun.convert_df(df_money)
+
+    st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')    
