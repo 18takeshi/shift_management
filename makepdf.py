@@ -1,17 +1,26 @@
 import streamlit as st
 
-import function as fun
-import numpy as np
-import pandas as pd
-
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.lib.units import cm,mm
 from reportlab.lib.pagesizes import A4, portrait
+from reportlab.lib.utils import ImageReader
+
+from bokeh.io.export import get_screenshot_as_png
+from io import BytesIO
+import io 
+
+def download_png(p,height):
+    img = get_screenshot_as_png(p, height=height, width=723)
+    buf = BytesIO()
+    img.save(buf, format="png")
+    byte_im = buf.getvalue()
+    img = ImageReader(io.BytesIO(byte_im))
+    return img
 
 ### PDFファイルを生成する ###
-def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain,date,date1):
+def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,total_work,sum_new,shift,shain,husoku):
     file_name = str(d)+'_シフト.pdf'    # ファイル名を設定
     pdf = canvas.Canvas(file_name, pagesize=portrait(A4))    # PDFを生成、サイズはA4
     pdf.saveState()    # セーブ
@@ -21,34 +30,28 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
     pdf.setSubject('TEST')
 
     ##グラフの追加
-    pdf.drawInlineImage(shift, 55*mm, 55*mm, 140*mm, 220*mm)
-    pdf.drawInlineImage(shift, 55*mm, 275*mm, 140*mm, 220*mm)
-    if shain is not None:
-        pdf.drawInlineImage(shain, 55*mm, 15*mm, 140*mm, 40*mm)
-    ### 四角形を描画して２枚目の社員グラフを隠す###
-    pdf.setFillColorRGB(255,255,255)
-    pdf.rect(55*mm, 279*mm, 195*mm, 297*mm, stroke=0, fill=1)
-    pdf.setFillColorRGB(0, 0, 0)
+    pdf.drawImage(shift, 55*mm, 85*mm, 140*mm, 197*mm)
+    pdf.drawImage(shain, 60*mm, 45*mm, 135*mm, 40*mm)
+    pdf.drawImage(husoku, 65*mm, 5*mm, 130*mm, 40*mm)
 
     ### 線の描画 ###
     pdf.setLineWidth(0.8)
-    pdf.line(5*cm, 27.5*cm, 5*cm, 2*cm)
-    pdf.line(3.3*cm, 27.5*cm, 3.3*cm, 2*cm)
-    pdf.line(2*cm, 27.5*cm, 2*cm, 2*cm)
+    pdf.line(5*cm, 27.66*cm, 5*cm, 5.5*cm)
+    pdf.line(3.3*cm, 27.66*cm, 3.3*cm, 5.5*cm)
+    pdf.line(2*cm, 27.66*cm, 2*cm, 5.5*cm)
 
     ### フォント、サイズを設定 ###
     pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
     pdf.setFont('HeiseiKakuGo-W5', 12)
-    pdf.drawString(2.2*cm, 27.7*cm, '確認')
-    pdf.drawString(3.6*cm, 27.7*cm, '当番')
-    pdf.drawString(19.6*cm, 27.7*cm, '時間')
+    pdf.drawString(2.2*cm, 28*cm, '確認')
+    pdf.drawString(3.6*cm, 28*cm, '当番')
+    pdf.drawString(19*cm, 28*cm, '労働時間')
     #労働時間集計
-    pdf.drawString(2*cm, 0.5*cm, '労働時間集計')
-    pdf.drawString(5*cm, 0.5*cm, '一般：'+str(sum_staff))
-    pdf.drawString(8*cm, 0.5*cm, '新人：'+str(sum_new))
-    pdf.drawString(10.5*cm, 0.5*cm, '社員：'+str(sum_s))
-    #pdf.drawString(13*cm, 0.5*cm, '契約：'+str(sum_con))
-    pdf.drawString(13*cm, 0.5*cm, '総計：'+str(total_work))
+    pdf.drawString(2.5*cm, 4.7*cm, '労働時間集計')
+    pdf.drawString(1.8*cm, 3.7*cm, 'スタッフ合計：'+str(sum_staff))
+    pdf.drawString(1.8*cm, 2.7*cm, '新人合計：'+str(sum_new))
+    pdf.drawString(1.8*cm, 1.7*cm, '社員合計：'+str(sum_s))
+    pdf.drawString(1.8*cm, 0.7*cm, '合計労働時間：'+str(total_work))
 
     #労働時間,当番の反映
     def write_role(le,sta,df_calc):
@@ -60,9 +63,8 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
             pdf.drawString(3.6*cm, float(strart)*cm, r)
             strart = strart - length
 
-    write_role(21.4,27.25,df_calc)  #スタッフ分
-    if shain is not None:
-        write_role(3.4,5.3,df_calc_s)  #社員分
+    write_role(18.14,27.5,df_calc)  #スタッフ分
+    write_role(2.42,7.8,df_calc_s)  #社員分
 
     ### 文字を描画 ###
     pdf.setFont('HeiseiKakuGo-W5', 20)    # フォントサイズの変更
@@ -94,23 +96,3 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
         PDFbyte = pdf_file.read()
 
     st.download_button(label="帳票出力",data=PDFbyte,file_name=file_name,mime="application/octet-stream")
-
-
-    ##df_calc出力
-    #社員以外給料計算
-    df_calc = fun.separate_17(df_calc,date,date1)      
-    df_money = df_calc[['時給','交通費','~17時','17時~','労働時間']]
-    df_money['日給'] = df_money['時給']*df_money['~17時']+(df_money['時給']+50)*df_money['17時~']+df_money['交通費']
-
-    #社員、給料計算せずにdf編集
-    if shain is not None:
-        df_calc_s = fun.separate_17(df_calc_s,date,date1)
-        df_calc_s = df_calc_s[['時給','交通費','~17時','17時~','労働時間']]
-        df_calc_s['日給'] = np.nan
-        df_all = pd.concat([df_money,df_calc_s])
-        csv = fun.convert_df(df_all)
-    #ノー社員デー
-    else:
-        csv = fun.convert_df(df_money)
-
-    st.download_button(label="データ出力",data=csv,file_name=str(d)+'_出勤データ.csv',mime='text/csv')    
