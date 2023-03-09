@@ -2,6 +2,7 @@ import streamlit as st
 
 import function as fun
 import numpy as np
+import pandas as pd
 
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
