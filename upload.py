@@ -145,5 +145,3 @@ if uploaded_file is not None:
         st.caption('※すべてのファイルをアップロードしてからOKを押してください')
         if st.button('OK'):
             mp.makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift,shain,date,date1)
-            
-               

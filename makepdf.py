@@ -95,22 +95,21 @@ def makepdf(df_calc,df_calc_s,d,sum_staff,sum_s,sum_con,total_work,sum_new,shift
 
     st.download_button(label="帳票出力",data=PDFbyte,file_name=file_name,mime="application/octet-stream")
 
-    ##df_calc出力
-    df_calc = fun.separate_17(df_calc,date,date1)
-    if shain is not None:
-        df_calc_s = fun.separate_17(df_calc_s,date,date1)
 
+    ##df_calc出力
     #社員以外給料計算
+    df_calc = fun.separate_17(df_calc,date,date1)      
     df_money = df_calc[['時給','交通費','~17時','17時~','労働時間']]
     df_money['日給'] = df_money['時給']*df_money['~17時']+(df_money['時給']+50)*df_money['17時~']+df_money['交通費']
 
     #社員、給料計算せずにdf編集
     if shain is not None:
+        df_calc_s = fun.separate_17(df_calc_s,date,date1)
         df_calc_s = df_calc_s[['時給','交通費','~17時','17時~','労働時間']]
         df_calc_s['日給'] = np.nan
         df_all = pd.concat([df_money,df_calc_s])
-    
         csv = fun.convert_df(df_all)
+    #ノー社員デー
     else:
         csv = fun.convert_df(df_money)
 
