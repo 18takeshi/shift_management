@@ -47,6 +47,14 @@ if uploaded_file is not None:
         if expander.checkbox(str(i),key=i+'in'):
             df_calc_s = df_calc_s.drop(i)
 
+    #15日以降のバグを防ぐために形変換
+    date = int(date)
+    if date > 14:     
+        date = str(date) 
+        date1 = str(date1)
+    else:
+        date = int(date)
+        date1 = float(date1)
     #社員以外出勤時間分ソート
     df_calc = df_calc.sort_values(date,ascending=True)
 

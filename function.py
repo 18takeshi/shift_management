@@ -5,11 +5,22 @@ from PIL import Image
 from bokeh.plotting import figure
 
 ##df_calc編集関数
-def df_calc_edit(df_calc,date,date1):      
-    try:
-        df_calc = df_calc[['契約社員','時給','交通費','入金','集計','朝','売場','新人',date,date1]]
-    except KeyError:
-        st.write('指定した日付が範囲外です')
+def df_calc_edit(df_calc,date,date1):
+    #なぜかわからないけど15日以降はKeyerror出てしまうので型変換
+    if date > 14:      
+        try:
+            date = str(date)    #strでないとdf_calcのフィルタリングできないのでいったんstrにする
+            date1 = str(date1)
+            df_calc = df_calc[['契約社員','時給','交通費','入金','集計','朝','売場','新人',date,date1]]
+        except KeyError:
+            st.write('指定した日付が範囲外です')
+
+    else:      
+        try:
+            df_calc = df_calc[['契約社員','時給','交通費','入金','集計','朝','売場','新人',date,date1]]
+        except KeyError:
+            st.write('指定した日付が範囲外です')
+
     #欠損値(出勤しない人)を消す
     df_calc = df_calc.dropna(subset=[date])
     
@@ -38,6 +49,7 @@ def df_calc_edit(df_calc,date,date1):
     df_calc['最少休憩時間']=rest_list
     df_calc['労働時間']= df_calc['拘束時間']- df_calc['最少休憩時間']
     df_calc['当番'] = '-'
+
     return df_calc
 
 #スライダーによる拘束時間、休憩時間編集
