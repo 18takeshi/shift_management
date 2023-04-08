@@ -12,7 +12,7 @@ import makepdf as mp
 df_kihon = pd.read_excel('基本シフト表集計.xlsx',index_col=0)
 
 st.title('シフト作成アプリ')
-st.caption('ver1.02 2023/3/09') 
+st.caption('ver1.03 2023/4/08') 
 
 ##シフト表アップロード
 uploaded_file = st.file_uploader("勤務シフト表をアップロードしてください", type='xlsx')

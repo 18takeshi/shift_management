@@ -85,7 +85,7 @@ def rest_edit(df_calc,date,date1):
 
     return df_calc 
 
-#17時以降の労働時間集計
+#17時以降の労働時間集計 #ver.1.03には実装しない
 def separate_17(df_calc,date,date1):
     df_calc['~17時']=0
     df_calc['17時~']=0
